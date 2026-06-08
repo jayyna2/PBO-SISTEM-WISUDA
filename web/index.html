@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pendaftaran Wisuda | Universitas PBO</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- 1. ALERT TOAST NOTIFICATION -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <!-- 2. LOGIN PAGE CONTAINER -->
+    <div id="view-login" class="login-container" style="display: flex;">
+        <div class="login-card">
+            <div class="login-header">
+                <h2>Portal Wisuda</h2>
+                <p>Universitas PBO Indonesia</p>
+            </div>
+            
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+                <div class="form-group">
+                    <label>Pilih Hak Akses</label>
+                    <div class="role-selector">
+                        <input type="radio" id="role_mhs" name="role" value="mahasiswa" checked style="display:none;">
+                        <label for="role_mhs" class="role-btn active" onclick="selectRole('mahasiswa')">
+                            <i class="fas fa-user-graduate" style="margin-right: 6px;"></i> Mahasiswa
+                        </label>
+                        
+                        <input type="radio" id="role_admin" name="role" value="admin" style="display:none;">
+                        <label for="role_admin" class="role-btn" onclick="selectRole('admin')">
+                            <i class="fas fa-user-shield" style="margin-right: 6px;"></i> Admin
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label id="username_label"><i class="fas fa-id-card"></i> Nomor Induk Mahasiswa (NIM)</label>
+                    <input type="text" id="username" class="form-control" placeholder="Masukkan NIM Anda" required autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required>
+                </div>
+
+                <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Masuk ke Sistem
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. DASHBOARD MAIN SHELL (SIDEBAR + CONTENT WRAPPER) -->
+    <div id="app-shell" style="display: none; width: 100%;">
+        
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="brand">
+                <h3>Portal Wisuda</h3>
+                <p>Universitas PBO Indonesia</p>
+            </div>
+            
+            <!-- Student Menus -->
+            <div id="menu-mhs" class="menu" style="display: none;">
+                <a href="#" class="menu-item active" onclick="switchView('mhs-dashboard')">
+                    <i class="fas fa-chart-line"></i> <span>Dashboard</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('mhs-daftar')">
+                    <i class="fas fa-edit"></i> <span>Form Pendaftaran</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('mhs-upload')">
+                    <i class="fas fa-upload"></i> <span>Unggah Berkas</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('mhs-status')">
+                    <i class="fas fa-id-card"></i> <span>Status Pendaftaran</span>
+                </a>
+            </div>
+
+            <!-- Admin Menus -->
+            <div id="menu-adm" class="menu" style="display: none;">
+                <a href="#" class="menu-item active" onclick="switchView('adm-dashboard')">
+                    <i class="fas fa-chart-pie"></i> <span>Dashboard Admin</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('adm-verifikasi')">
+                    <i class="fas fa-check-double"></i> <span>Verifikasi Berkas</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('adm-laporan')">
+                    <i class="fas fa-file-invoice"></i> <span>Kelola & Laporan</span>
+                </a>
+            </div>
+
+            <div class="menu-footer">
+                <a href="#" class="menu-item" onclick="handleLogout()" style="padding: 10px 24px; border: none;">
+                    <i class="fas fa-sign-out-alt"></i> <span>Keluar</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- CONTENT PANEL -->
+        <div class="main-content">
+            <!-- NAVBAR -->
+            <div class="navbar">
+                <div class="nav-title">
+                    <h4 id="page-header-title">Dashboard</h4>
+                </div>
+                <div class="nav-user">
+                    <div class="user-info">
+                        <h5 id="nav-user-name">Nama Pengguna</h5>
+                        <p id="nav-user-role">Role</p>
+                    </div>
+                    <div class="user-avatar" id="nav-user-avatar">U</div>
+                </div>
+            </div>
+
+            <!-- BODY CONTENT PAGES -->
+            <div class="content-body">
+
+                <!-- ========================================================
+                     MAHASISWA PAGE: DASHBOARD
+                     ======================================================== -->
+                <section id="view-mhs-dashboard" style="display: none;">
+                    <div class="card-panel" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; margin-bottom: 25px;">
+                        <h2 style="font-weight: 700; margin-bottom: 8px;">Selamat Datang, <span id="mhs-name-welcome">Nama</span>!</h2>
+                        <p style="font-size: 15px; opacity: 0.9;">Selamat atas penyelesaian masa studi Anda. Silakan daftarkan diri Anda dan lengkapi seluruh persyaratan wisuda melalui portal ini.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <!-- Profil Panel -->
+                        <div class="card-panel" style="margin-bottom: 0;">
+                            <div class="card-title">
+                                <span><i class="fas fa-user-circle" style="color: var(--primary); margin-right: 8px;"></i> Profil Akademik</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 15px;">
+                                <div class="print-row" style="margin-bottom: 0; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">Nama Lengkap</span>
+                                    <span class="print-value" style="font-size: 14px;" id="profile-nama">-</span>
+                                </div>
+                                <div class="print-row" style="margin-bottom: 0; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">NIM</span>
+                                    <span class="print-value" style="font-size: 14px;" id="profile-nim">-</span>
+                                </div>
+                                <div class="print-row" style="margin-bottom: 0; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">Program Studi</span>
+                                    <span class="print-value" style="font-size: 14px;" id="profile-prodi">-</span>
+                                </div>
+                                <div class="print-row" style="margin-bottom: 0; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">Fakultas</span>
+                                    <span class="print-value" style="font-size: 14px;" id="profile-fakultas">-</span>
+                                </div>
+                                <div class="print-row" style="margin-bottom: 0; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">IPK Terakhir</span>
+                                    <span class="print-value" style="font-size: 14px; font-weight: 700; color: var(--primary-light);" id="profile-ipk">-</span>
+                                </div>
+                                <div class="print-row" style="margin-bottom: 0; padding-bottom: 0;">
+                                    <span class="print-label" style="width: 120px; font-size: 14px;">Email</span>
+                                    <span class="print-value" style="font-size: 14px;" id="profile-email">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Ringkas -->
+                        <div class="card-panel" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div class="card-title">
+                                    <span><i class="fas fa-file-invoice" style="color: var(--primary); margin-right: 8px;"></i> Status Pendaftaran</span>
+                                </div>
+                                <div style="margin-top: 15px; text-align: center; padding: 20px 0;" id="mhs-status-summary-box">
+                                    <!-- Dynamic content based on status -->
+                                </div>
+                            </div>
+                            <div id="mhs-dashboard-action-btn">
+                                <!-- Dynamic button -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================
+                     MAHASISWA PAGE: REGISTER FORM
+                     ======================================================== -->
+                <section id="view-mhs-daftar" style="display: none;">
+                    <div class="card-panel">
+                        <div class="card-title">
+                            <span><i class="fas fa-edit" style="color: var(--primary); margin-right: 8px;"></i> Pengisian Formulir Wisuda</span>
+                            <span style="font-size: 13px; font-weight: 500; color: var(--text-light);">Harap isi data dengan lengkap dan benar</span>
+                        </div>
+
+                        <form id="daftarForm" onsubmit="handleRegistrationSubmit(event)">
+                            <div class="form-grid" style="margin-bottom: 20px;">
+                                <!-- Profil ReadOnly info -->
+                                <div style="display: flex; flex-direction: column; gap: 15px; background-color: #f8fafc; padding: 20px; border-radius: 8px; border: 1px dashed #cbd5e0;">
+                                    <h4 style="font-weight: 600; color: var(--primary-dark); margin-bottom: 5px;"><i class="fas fa-info-circle"></i> Informasi Akademik</h4>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>NIM</label>
+                                        <input type="text" id="reg-nim-ro" class="form-control" readonly style="background-color: #e2e8f0; cursor: not-allowed;">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>Nama Lengkap</label>
+                                        <input type="text" id="reg-nama-ro" class="form-control" readonly style="background-color: #e2e8f0; cursor: not-allowed;">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>Fakultas / Program Studi</label>
+                                        <input type="text" id="reg-prodi-ro" class="form-control" readonly style="background-color: #e2e8f0; cursor: not-allowed;">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>IPK Kelulusan</label>
+                                        <input type="text" id="reg-ipk-ro" class="form-control" readonly style="background-color: #e2e8f0; cursor: not-allowed; font-weight: 700; color: var(--primary);">
+                                    </div>
+                                </div>
+
+                                <!-- Input Details -->
+                                <div style="display: flex; flex-direction: column; gap: 15px;">
+                                    <h4 style="font-weight: 600; color: var(--primary-dark); margin-bottom: 5px;"><i class="fas fa-pen-fancy"></i> Rincian Kelulusan</h4>
+                                    <div class="form-group">
+                                        <label for="periode_wisuda">Periode Wisuda <span style="color:var(--danger)">*</span></label>
+                                        <select id="periode_wisuda" class="form-control" required>
+                                            <option value="" disabled selected>-- Pilih Periode Wisuda --</option>
+                                            <option value="Periode I - Juni 2026">Periode I - Juni 2026</option>
+                                            <option value="Periode II - September 2026">Periode II - September 2026</option>
+                                            <option value="Periode III - Desember 2026">Periode III - Desember 2026</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="judul_skripsi">Judul Tugas Akhir / Skripsi <span style="color:var(--danger)">*</span></label>
+                                        <textarea id="judul_skripsi" class="form-control" rows="5" placeholder="Masukkan judul lengkap skripsi Anda dengan benar" required style="resize: vertical; min-height: 120px;"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="reset" class="btn-sm btn-danger" style="padding: 12px 24px;"><i class="fas fa-undo"></i> Reset</button>
+                                <button type="submit" class="btn-primary" style="width: auto; padding: 12px 30px;"><i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Kirim Pendaftaran</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ========================================================
+                     MAHASISWA PAGE: UPLOAD DOCUMENTS
+                     ======================================================== -->
+                <section id="view-mhs-upload" style="display: none;">
+                    <div class="card-panel">
+                        <div class="card-title">
+                            <span><i class="fas fa-cloud-upload-alt" style="color: var(--primary); margin-right: 8px;"></i> Upload Berkas Wisuda</span>
+                            <span style="font-size: 13px; font-weight: 500; color: var(--text-light);"><i class="fas fa-info-circle"></i> Maksimal ukuran per file: 5MB</span>
+                        </div>
+
+                        <form id="uploadForm" onsubmit="handleUploadSubmit(event)">
+                            <div style="display: flex; flex-direction: column; gap: 25px;">
+                                
+                                <!-- 1. Foto Formal -->
+                                <div class="form-grid" style="align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 20px;">
+                                    <div>
+                                        <h4 style="font-weight: 600; color: var(--primary-dark);"><i class="fas fa-image"></i> Foto Formal Mahasiswa</h4>
+                                        <p style="font-size: 13px; color: var(--text-light); margin-top: 4px; line-height: 1.5;">Foto formal berwarna background merah dengan jas almamater. Format: JPG/JPEG/PNG.</p>
+                                        <div style="margin-top: 10px;" id="status-foto-badge"></div>
+                                    </div>
+                                    <div>
+                                        <div class="upload-box">
+                                            <i class="fas fa-file-image"></i>
+                                            <p>Pilih foto formal Anda</p>
+                                            <span>Klik untuk mencari file</span>
+                                            <input type="file" id="foto" accept=".jpg,.jpeg,.png">
+                                            <div class="file-preview" id="foto_preview"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Dokumen Persyaratan -->
+                                <div class="form-grid" style="align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 20px;">
+                                    <div>
+                                        <h4 style="font-weight: 600; color: var(--primary-dark);"><i class="fas fa-file-pdf"></i> Berkas Persyaratan (PDF)</h4>
+                                        <p style="font-size: 13px; color: var(--text-light); margin-top: 4px; line-height: 1.5;">Gabungan PDF berisi: lembar persetujuan skripsi, bebas tunggakan perpus, dan transkrip. Format: PDF.</p>
+                                        <div style="margin-top: 10px;" id="status-syarat-badge"></div>
+                                    </div>
+                                    <div>
+                                        <div class="upload-box">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <p>Pilih dokumen PDF persyaratan</p>
+                                            <span>Klik untuk mencari file</span>
+                                            <input type="file" id="syarat" accept=".pdf">
+                                            <div class="file-preview" id="syarat_preview"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Bukti Pembayaran -->
+                                <div class="form-grid" style="align-items: center; padding-bottom: 10px;">
+                                    <div>
+                                        <h4 style="font-weight: 600; color: var(--primary-dark);"><i class="fas fa-receipt"></i> Bukti Pembayaran Wisuda</h4>
+                                        <p style="font-size: 13px; color: var(--text-light); margin-top: 4px; line-height: 1.5;">Struk bukti transfer bank sebesar Rp 750.000,- ke rekening Rektor. Format: JPG/JPEG/PNG.</p>
+                                        <div style="margin-top: 10px;" id="status-bukti-badge"></div>
+                                    </div>
+                                    <div>
+                                        <div class="upload-box">
+                                            <i class="fas fa-receipt"></i>
+                                            <p>Pilih struk bukti pembayaran</p>
+                                            <span>Klik untuk mencari file</span>
+                                            <input type="file" id="bukti_bayar" accept=".jpg,.jpeg,.png">
+                                            <div class="file-preview" id="bukti_preview"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="submit" class="btn-primary" style="width: auto; padding: 12px 35px;"><i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> Unggah Semua Berkas</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ========================================================
+                     MAHASISWA PAGE: STATUS DETAILS & PRINT CARD
+                     ======================================================== -->
+                <section id="view-mhs-status" style="display: none;">
+                    <div id="status-not-registered-card" style="display: none;" class="card-panel text-center">
+                        <i class="fas fa-file-signature" style="font-size: 60px; color: var(--text-light); margin-bottom: 20px;"></i>
+                        <h3 style="font-weight: 700; margin-bottom: 10px;">Anda Belum Mengisi Formulir</h3>
+                        <p style="color: var(--text-light); max-width: 500px; margin: 0 auto 20px auto; line-height: 1.6;">Silakan isi formulir pendaftaran wisuda terlebih dahulu sebelum memantau status berkas dan pembayaran Anda.</p>
+                        <button onclick="switchView('mhs-daftar')" class="btn-primary" style="width: auto; padding: 12px 30px;">Isi Formulir Sekarang</button>
+                    </div>
+
+                    <div id="status-details-container" style="display: none;">
+                        <!-- Status Breakdown Card -->
+                        <div class="card-panel">
+                            <div class="card-title">
+                                <span><i class="fas fa-stream" style="color: var(--primary); margin-right: 8px;"></i> Rekap Verifikasi Persyaratan</span>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 18px;">
+                                <div class="print-row" style="align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 12px;">
+                                    <span class="print-label" style="width: 200px;"><i class="fas fa-file-contract"></i> 1. Berkas Administrasi</span>
+                                    <span class="print-value" id="status-berkas-val">-</span>
+                                </div>
+                                <div class="print-row" style="align-items: center; border-bottom: 1px solid #edf2f7; padding-bottom: 12px;">
+                                    <span class="print-label" style="width: 200px;"><i class="fas fa-money-check-alt"></i> 2. Bukti Pembayaran</span>
+                                    <span class="print-value" id="status-bayar-val">-</span>
+                                </div>
+                                <div class="print-row" style="align-items: center;">
+                                    <span class="print-label" style="width: 200px;"><i class="fas fa-graduation-cap"></i> 3. Status Pendaftaran</span>
+                                    <span class="print-value" id="status-pendaftaran-val">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Warning / Printable Card -->
+                        <div id="status-unapproved-warning" style="display: none;" class="card-panel" style="background-color: #fffaf0; border: 1px solid #feebc8; text-align: center; padding: 25px;">
+                            <i class="fas fa-info-circle" style="font-size: 30px; color: var(--warning); margin-bottom: 10px;"></i>
+                            <h4 style="font-weight: 700; color: #c05621;">Kartu Belum Tersedia</h4>
+                            <p style="font-size: 13px; color: #dd6b20; max-width: 600px; margin: 8px auto 0 auto; line-height: 1.5;">Kartu peserta wisuda hanya dapat dicetak setelah berkas administrasi dan bukti pembayaran Anda disetujui (Approved) oleh administrator wisuda.</p>
+                        </div>
+
+                        <!-- Printable Card Section -->
+                        <div id="status-printable-card-box" style="display: none;" class="card-panel" style="background-color: #f7fafc; border: 1px solid #e2e8f0;">
+                            <div class="card-title">
+                                <span><i class="fas fa-print" style="color: var(--primary); margin-right: 8px;"></i> Kartu Peserta Wisuda Resmi</span>
+                                <span style="font-size: 13px; color: var(--text-light);">Cetak kartu ini sebagai syarat pengambilan toga dan undangan</span>
+                            </div>
+
+                            <div class="printable-card" id="graduationCard">
+                                <div class="print-header">
+                                    <h2>Kartu Peserta Wisuda</h2>
+                                    <p style="font-size: 14px; font-weight: 500; color: var(--text-light); margin-top: 5px;">Universitas PBO Indonesia</p>
+                                </div>
+                                
+                                <div class="print-body">
+                                    <div class="print-photo" id="card-photo-box">
+                                        <!-- Foto formal student -->
+                                    </div>
+                                    <div class="print-details">
+                                        <div class="print-row">
+                                            <span class="print-label">NIM</span>
+                                            <span class="print-value" id="card-nim">: -</span>
+                                        </div>
+                                        <div class="print-row">
+                                            <span class="print-label">Nama Lengkap</span>
+                                            <span class="print-value" id="card-nama">: -</span>
+                                        </div>
+                                        <div class="print-row">
+                                            <span class="print-label">Fakultas</span>
+                                            <span class="print-value" id="card-fakultas">: -</span>
+                                        </div>
+                                        <div class="print-row">
+                                            <span class="print-label">Program Studi</span>
+                                            <span class="print-value" id="card-prodi">: -</span>
+                                        </div>
+                                        <div class="print-row">
+                                            <span class="print-label">IPK Kelulusan</span>
+                                            <span class="print-value" id="card-ipk">: -</span>
+                                        </div>
+                                        <div class="print-row">
+                                            <span class="print-label">Skripsi</span>
+                                            <span class="print-value" id="card-judul">: -</span>
+                                        </div>
+                                        <div class="print-row" style="margin-top: 15px;">
+                                            <span class="print-label">Sesi Wisuda</span>
+                                            <span class="print-value" style="font-weight: 700; color: var(--primary);" id="card-periode">: -</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 30px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #edf2f7; padding-top: 15px;">
+                                    <div style="font-size: 11px; color: var(--text-light);" id="card-print-time">
+                                        Dicetak otomatis
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <p style="font-size: 11px; color: var(--text-light); margin-bottom: 40px;">Biro Administrasi Akademik</p>
+                                        <p style="font-size: 12px; font-weight: 700; color: var(--primary-dark); text-decoration: underline;">Dr. Ir. Hermawan, M.T.</p>
+                                        <p style="font-size: 10px; color: var(--text-light);">NIP. 197805122005011002</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="btn-group" style="justify-content: center; margin-top: 20px;">
+                                <button onclick="window.print()" class="btn-primary" style="width: auto; padding: 12px 40px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);">
+                                    <i class="fas fa-print" style="margin-right: 8px;"></i> Cetak Kartu Wisuda
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ========================================================
+                     ADMIN PAGE: DASHBOARD SUMMARY
+                     ======================================================== -->
+                <section id="view-adm-dashboard" style="display: none;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3 id="adm-stat-total">0</h3>
+                                <p>Total Pendaftar</p>
+                            </div>
+                            <div class="stat-icon primary">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3 id="adm-stat-pending">0</h3>
+                                <p>Menunggu Verifikasi</p>
+                            </div>
+                            <div class="stat-icon warning">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3 id="adm-stat-approved">0</h3>
+                                <p>Pendaftaran Disetujui</p>
+                            </div>
+                            <div class="stat-icon success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3 id="adm-stat-ipk">0.00</h3>
+                                <p>Rata-rata IPK</p>
+                            </div>
+                            <div class="stat-icon primary" style="background-color: rgba(0, 180, 216, 0.1); color: var(--secondary);">
+                                <i class="fas fa-award"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <!-- Left panel: Major stats using custom progress bars -->
+                        <div class="card-panel" style="margin-bottom: 0;">
+                            <div class="card-title">
+                                <span><i class="fas fa-chart-bar" style="color: var(--primary); margin-right: 8px;"></i> Sebaran Fakultas Pendaftar</span>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 20px; margin-top: 10px;" id="adm-faculty-chart-box">
+                                <!-- Progress bars loaded dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Right panel: Recent Registration Logs -->
+                        <div class="card-panel" style="margin-bottom: 0;">
+                            <div class="card-title">
+                                <span><i class="fas fa-history" style="color: var(--primary); margin-right: 8px;"></i> Log Pendaftar Terakhir</span>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="data-table" style="font-size: 13px;" id="admRecentTable">
+                                    <thead>
+                                        <tr>
+                                            <th>NIM</th>
+                                            <th>Nama</th>
+                                            <th>Tanggal</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Filled dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================
+                     ADMIN PAGE: VERIFIKASI LIST
+                     ======================================================== -->
+                <section id="view-adm-verifikasi" style="display: none;">
+                    <div class="search-panel">
+                        <div class="search-field">
+                            <label for="searchKey"><i class="fas fa-search"></i> Pencarian</label>
+                            <input type="text" id="searchKey" class="form-control" placeholder="Cari NIM, Nama, Judul Skripsi..." onkeyup="filterTable('searchKey', 'filterStatus', 'filterFakultas', 'verificationTable')">
+                        </div>
+                        <div class="search-field" style="max-width: 200px;">
+                            <label for="filterStatus">Status Registrasi</label>
+                            <select id="filterStatus" class="form-control" onchange="filterTable('searchKey', 'filterStatus', 'filterFakultas', 'verificationTable')">
+                                <option value="ALL">Semua</option>
+                                <option value="PENDING">PENDING</option>
+                                <option value="APPROVED">APPROVED</option>
+                                <option value="REJECTED">REJECTED</option>
+                            </select>
+                        </div>
+                        <div class="search-field" style="max-width: 230px;">
+                            <label for="filterFakultas">Fakultas</label>
+                            <select id="filterFakultas" class="form-control" onchange="filterTable('searchKey', 'filterStatus', 'filterFakultas', 'verificationTable')">
+                                <option value="ALL">Semua</option>
+                                <option value="Teknik">Teknik</option>
+                                <option value="Ekonomi dan Bisnis">Ekonomi dan Bisnis</option>
+                                <option value="Matematika dan IPA">Matematika dan IPA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card-panel">
+                        <div class="card-title">
+                            <span><i class="fas fa-list-ul" style="color: var(--primary); margin-right: 8px;"></i> Daftar Usulan Pendaftaran Wisuda</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="verificationTable">
+                                <thead>
+                                    <tr>
+                                        <th>NIM</th>
+                                        <th>Nama Lengkap</th>
+                                        <th>Prodi</th>
+                                        <th>IPK</th>
+                                        <th>Berkas</th>
+                                        <th>Bayar</th>
+                                        <th>Status Pendaftaran</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================
+                     ADMIN PAGE: KELOLA MAHASISWA & LAPORAN
+                     ======================================================== -->
+                <section id="view-adm-laporan" style="display: none;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px;">
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="openAddMhsModal()" class="btn-primary" style="width: auto; padding: 12px 24px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);">
+                                <i class="fas fa-plus-circle"></i> Tambah Mahasiswa
+                            </button>
+                            <button onclick="exportCsv()" class="btn-primary" style="width: auto; padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                                <i class="fas fa-file-excel" style="margin-right: 8px;"></i> Ekspor CSV Rekapitulasi
+                            </button>
+                        </div>
+                        
+                        <div style="flex: 1; max-width: 350px;">
+                            <input type="text" id="mhsSearchKey" class="form-control" placeholder="Cari NIM, Nama, Fakultas, Prodi..." onkeyup="filterTable('mhsSearchKey', 'mhsFilterFakultas', 'mhsFilterFakultas', 'mhsTable')">
+                            <!-- Hidden filter helper -->
+                            <select id="mhsFilterFakultas" style="display:none;"><option value="ALL"></option></select>
+                        </div>
+                    </div>
+
+                    <div class="card-panel">
+                        <div class="card-title">
+                            <span><i class="fas fa-users-cog" style="color: var(--primary); margin-right: 8px;"></i> Database Mahasiswa Universitas</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="mhsTable">
+                                <thead>
+                                    <tr>
+                                        <th>NIM</th>
+                                        <th>Nama Lengkap</th>
+                                        <th>Email</th>
+                                        <th>Telepon</th>
+                                        <th>Fakultas / Program Studi</th>
+                                        <th>IPK</th>
+                                        <th>Pendaftaran Wisuda</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================
+         MODALS POPUP LAYOUT
+         ======================================================== -->
+    
+    <!-- A. MODAL VERIFIKASI (ADMIN) -->
+    <div class="modal" id="verifyModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>Lembar Verifikasi Pendaftaran</h3>
+                <span class="modal-close" onclick="closeModal('verifyModal')">&times;</span>
+            </div>
+
+            <!-- Profile Summary inside Modal -->
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                <h4 style="color: var(--primary-dark); font-weight: 700; margin-bottom: 5px;"><span id="modal_nama">Nama</span> (<span id="modal_nim_display">NIM</span>)</h4>
+                <p style="font-size: 13px; font-weight: 500; color: var(--text-light);">Skripsi: "<span id="modal_judul">Judul Skripsi</span>"</p>
+            </div>
+
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <!-- Berkas -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h5 style="font-weight: 700; color: var(--primary);"><i class="fas fa-file-alt"></i> Berkas Persyaratan</h5>
+                        <span id="badge_berkas" class="badge">PENDING</span>
+                    </div>
+                    
+                    <div style="border: 1px solid #edf2f7; border-radius: 8px; padding: 10px; text-align: center; background-color: white;">
+                        <p style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">Foto Formal Mahasiswa</p>
+                        <div style="width: 120px; height: 160px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; background-color: #f7fafc; display: flex; align-items: center; justify-content: center;">
+                            <img id="modal_img_preview" src="" alt="Formal Photo" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                            <span id="no-photo-preview" style="font-size: 12px; color: var(--text-light);">Belum ada foto</span>
+                        </div>
+                    </div>
+
+                    <a id="modal_pdf_link" href="#" target="_blank" class="btn-sm btn-outline" style="text-align: center; display: none; text-decoration: none;">
+                        <i class="fas fa-file-pdf" style="margin-right: 6px;"></i> Buka Berkas Persyaratan (PDF)
+                    </a>
+                    <span id="no-pdf-preview" style="text-align: center; font-size:12px; color:var(--text-light);">Berkas PDF belum diupload</span>
+
+                    <!-- Verify Berkas forms -->
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button onclick="submitVerifyAction('berkas', 'APPROVED')" class="btn-sm btn-success" style="flex:1;">Setujui Berkas</button>
+                        <button onclick="submitVerifyAction('berkas', 'REJECTED')" class="btn-sm btn-danger" style="flex:1;">Tolak Berkas</button>
+                    </div>
+                </div>
+
+                <!-- Pembayaran -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h5 style="font-weight: 700; color: var(--primary);"><i class="fas fa-receipt"></i> Bukti Pembayaran</h5>
+                        <span id="badge_pembayaran" class="badge">PENDING</span>
+                    </div>
+
+                    <div style="border: 1px solid #edf2f7; border-radius: 8px; padding: 10px; text-align: center; background-color: white; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                        <p style="font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 8px;">Struk Transaksi Rp 750.000,-</p>
+                        <div style="max-height: 160px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; background-color: #f7fafc; display: flex; align-items: center; justify-content: center; width: 100%; height: 160px;">
+                            <img id="modal_receipt_preview" src="" alt="Bukti Pembayaran" style="max-width: 100%; max-height: 100%; object-fit: contain; display: none;">
+                            <span id="no-receipt-preview" style="font-size: 12px; color: var(--text-light);">Belum ada bukti</span>
+                        </div>
+                    </div>
+
+                    <!-- Verify Payment forms -->
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="submitVerifyAction('pembayaran', 'APPROVED')" class="btn-sm btn-success" style="flex:1;">Setujui Bayar</button>
+                        <button onclick="submitVerifyAction('pembayaran', 'REJECTED')" class="btn-sm btn-danger" style="flex:1;">Tolak Bayar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Final Registration Approval form -->
+            <div style="border-top: 1px solid #edf2f7; margin-top: 25px; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--primary-dark); margin-bottom: 10px;"><i class="fas fa-user-check"></i> Keputusan Kelulusan Akhir</h5>
+                
+                <div class="form-group">
+                    <label for="modal_keterangan">Keterangan / Catatan Verifikator</label>
+                    <textarea id="modal_keterangan" class="form-control" rows="3" placeholder="Masukkan catatan penolakan atau keterangan persetujuan..."></textarea>
+                </div>
+
+                <div class="btn-group" style="margin-top: 15px;">
+                    <button type="button" class="btn-sm btn-outline" onclick="closeModal('verifyModal')" style="padding: 10px 20px;">Batal</button>
+                    <button type="button" onclick="submitVerifyAction('pendaftaran', 'REJECTED')" class="btn-sm btn-danger" style="padding: 10px 24px; font-weight: 700;">TOLAK PENDAFTARAN</button>
+                    <button type="button" onclick="submitVerifyAction('pendaftaran', 'APPROVED')" class="btn-sm btn-primary" style="width: auto; padding: 10px 30px; font-weight: 700;">SETUJUI PENDAFTARAN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B. MODAL CRUD MAHASISWA (ADMIN) -->
+    <div class="modal" id="studentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="student-modal-title">Tambah Mahasiswa Baru</h3>
+                <span class="modal-close" onclick="closeModal('studentModal')">&times;</span>
+            </div>
+            
+            <form id="studentForm" onsubmit="handleStudentFormSubmit(event)">
+                <input type="hidden" id="student_is_edit" value="false">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="mhs_nim">Nomor Induk Mahasiswa (NIM) <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="mhs_nim" class="form-control" placeholder="Contoh: 12345678" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="mhs_nama">Nama Lengkap <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="mhs_nama" class="form-control" placeholder="Nama Lengkap" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="mhs_email">Alamat Email <span style="color:var(--danger)">*</span></label>
+                        <input type="email" id="mhs_email" class="form-control" placeholder="nama@univ.ac.id" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="mhs_telepon">No Telepon / WhatsApp <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="mhs_telepon" class="form-control" placeholder="Contoh: 0812xxxx" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="mhs_fakultas">Fakultas <span style="color:var(--danger)">*</span></label>
+                        <select id="mhs_fakultas" class="form-control" required>
+                            <option value="" disabled selected>-- Pilih Fakultas --</option>
+                            <option value="Teknik">Teknik</option>
+                            <option value="Ekonomi dan Bisnis">Ekonomi dan Bisnis</option>
+                            <option value="Matematika dan IPA">Matematika dan IPA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mhs_prodi">Program Studi <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="mhs_prodi" class="form-control" placeholder="Contoh: Teknik Informatika" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="mhs_ipk">IPK Terakhir <span style="color:var(--danger)">*</span></label>
+                        <input type="number" step="0.01" min="2.00" max="4.00" id="mhs_ipk" class="form-control" placeholder="Contoh: 3.75" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="mhs_password" id="mhs-pwd-label">Password Akun <span style="color:var(--danger)">*</span></label>
+                        <input type="password" id="mhs_password" class="form-control" placeholder="Masukkan password" required>
+                    </div>
+                </div>
+
+                <div class="btn-group" style="margin-top: 25px;">
+                    <button type="button" class="btn-sm btn-outline" onclick="closeModal('studentModal')">Batal</button>
+                    <button type="submit" class="btn-primary" style="width:auto; padding: 10px 30px;">Simpan Mahasiswa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Frontend Core JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>

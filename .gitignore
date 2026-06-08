@@ -1,0 +1,18 @@
+# Compiled Java class files
+bin/
+*.class
+
+# Eclipse / VSCode project files
+.settings/
+*.launch
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads (user-uploaded files, not for repo)
+web/uploads/*
+!web/uploads/.gitkeep
