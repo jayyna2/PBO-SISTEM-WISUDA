@@ -11,9 +11,14 @@ import java.util.ArrayList;
 import model.*;
 
 public class DbHelper {
-    private static final String URL = "jdbc:mysql://localhost:3306/db_wisuda?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true";
-    private static final String USER = "root";
-    private static final String PASSWORD = ""; // Default Laragon password is empty
+    // Support Railway env vars with fallback to local Laragon defaults
+    private static final String DB_HOST     = System.getenv("MYSQLHOST")     != null ? System.getenv("MYSQLHOST")     : "localhost";
+    private static final String DB_PORT     = System.getenv("MYSQLPORT")     != null ? System.getenv("MYSQLPORT")     : "3306";
+    private static final String DB_NAME     = System.getenv("MYSQLDATABASE") != null ? System.getenv("MYSQLDATABASE") : "db_wisuda";
+    private static final String USER        = System.getenv("MYSQLUSER")     != null ? System.getenv("MYSQLUSER")     : "root";
+    private static final String PASSWORD    = System.getenv("MYSQLPASSWORD") != null ? System.getenv("MYSQLPASSWORD") : "";
+    private static final String URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME
+            + "?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true";
 
     static {
         try {

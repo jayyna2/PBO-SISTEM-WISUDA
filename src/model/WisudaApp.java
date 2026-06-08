@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
 public class WisudaApp {
-    private static final int PORT = 8080;
+    private static final int PORT = System.getenv("PORT") != null ? Integer.parseInt(System.getenv("PORT")) : 8080;
 
     public static void main(String[] args) {
         try {

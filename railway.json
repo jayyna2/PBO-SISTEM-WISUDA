@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "mkdir -p bin && find src -name '*.java' | xargs javac -cp 'lib/*' -d bin"
+  },
+  "deploy": {
+    "startCommand": "java -cp 'bin:lib/*' model.WisudaApp",
+    "healthcheckPath": "/",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
